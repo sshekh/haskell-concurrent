@@ -1,1 +1,6 @@
 # Ignore build binary files
+
+# Ignore vim swap files
+*.swp
+*.swo
+*~

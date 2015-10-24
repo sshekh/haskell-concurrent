@@ -1,6 +1,10 @@
 #Ignore build binary files
+dist/
+cabal-dev/
 
 #Ignore vim swap files
 *.swp
 *.swo
 *~
+*.hi
+*.o

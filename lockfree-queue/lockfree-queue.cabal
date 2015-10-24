@@ -16,10 +16,7 @@ version:             0.1.0.0
 synopsis:            Michael & Scott's intrusive lock-free queue.
 
 -- A longer description of the package.
-description:         
-Implementation of well-known Michael & Scott's queue algorithm:
-
-[1998] Maged Michael, Michael Scott "Simple, fast, and practical non-blocking and blocking concurrent queue algorithms"
+description:         Implementation of well-known Michael & Scott's queue algorithm
 
 -- URL for the project homepage or repository.
 homepage:            https://github.com/sshekh/haskell-concurrent/wiki

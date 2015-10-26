@@ -14,6 +14,7 @@ import GHC.Prim
 -- pointer_t is !IORef (Node a), these have been made mutable because head and tail would need to change values, 
 -- Node has a data type and a pointer
 data Node a = Null | Node a !(IORef (Node a))
+null = newIORef Null
 
 -- FIXME
 instance Eq Node where
@@ -30,8 +31,16 @@ data LinkedQueue a = LQ {
 }
 
 newq :: IO (LinkedQueue a)
+newq = do
+  newNode = Node () null
+  return (LQ newNode newNode)
 
 enq :: LinkedQueue a -> a -> IO()
+enq queue@(LQ hptr tptr) val = do
+  newNode = Node val null
+  loop :: IO()
+
+
 
 deq :: LinkedQueue a -> IO(Maybe a)
 

@@ -17,7 +17,7 @@ import GHC.STRef
 -- pointer_t is !IORef (Node a), these have been made mutable because head and tail would need to change values,
 -- Node has a data type and a pointer
 data Node a = Null | Node a !(IORef (Node a))
-null = newIORef Null
+nullN = newIORef Null
 
 -- FIXME
 instance Eq Node where
@@ -36,7 +36,7 @@ data LinkedQueue a = LQ {
 newq :: IO (LinkedQueue a)
 newq = do
   let
-    newNode = Node () null
+    newNode = Node () nullN
   head <- newIORef newNode
   tail <- newIORef newNode
   return (LQ head tail)
@@ -44,7 +44,7 @@ newq = do
 enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do
   let
-    newNode = Node val null
+    newNode = Node val nullN
   loop :: IO()
   where loop = undefined
 

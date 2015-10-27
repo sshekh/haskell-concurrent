@@ -20,8 +20,7 @@ data Node a = Null | Node a !(IORef (Node a))
 nullN = newIORef Null
 
 -- FIXME
-instance Eq Node where
-  (==) :: Node a -> Node a -> Bool
+instance Eq (Node a) where
   (==) Null Null = True
   (==) (Node _ (IORef (STRef mv1)))
        (Node _ (IORef (STRef mv2))) = sameMutVar# mv1 mv2

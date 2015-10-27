@@ -9,9 +9,9 @@ import Data.Atomics
 
 import System.IO
 import GHC.Base   -- for sameMutVar
-import GHC.Prim   
+import GHC.Prim
 
--- pointer_t is !IORef (Node a), these have been made mutable because head and tail would need to change values, 
+-- pointer_t is !IORef (Node a), these have been made mutable because head and tail would need to change values,
 -- Node has a data type and a pointer
 data Node a = Null | Node a !(IORef (Node a))
 null = newIORef Null
@@ -45,5 +45,3 @@ enq queue@(LQ hptr tptr) val = do
 deq :: LinkedQueue a -> IO(Maybe a)
 
 nullq :: LinkedQueue q -> IO Bool
-
-

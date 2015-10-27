@@ -46,9 +46,12 @@ enq queue@(LQ hptr tptr) val = do
   let
     newNode = Node val null
   loop :: IO()
+  where loop = undefined
 
 
 
 deq :: LinkedQueue a -> IO(Maybe a)
+deq = undefined
 
 nullq :: LinkedQueue q -> IO Bool
+nullq = undefined

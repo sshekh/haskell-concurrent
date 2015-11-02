@@ -46,8 +46,10 @@ enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do
     nullN <- newIORef Null
     let newNode = Node val nullN          -- Allocate a new node
-    loop :: IO()
-    let loop = do
+    loop
+    where
+      loop :: IO()
+      loop = do
           tTicket <- readForCAS tptr        -- Read tail
           let tail = peekTicket tTicket
               nptr = next tTicket           -- Read next
@@ -65,9 +67,9 @@ enq queue@(LQ hptr tptr) val = do
                         -- tail was not pointing to the last node, swing tptr
                         _ <- casIORef tptr tTicket nxtN
                         loop
-    in loop
 
 
 --deq :: LinkedQueue a -> IO(Maybe a)
+  
 
 --nullq :: LinkedQueue q -> IO Bool

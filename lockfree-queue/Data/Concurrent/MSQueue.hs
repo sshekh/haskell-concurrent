@@ -62,9 +62,10 @@ newq = do
 enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do
     nullN <- newIORef Null
-    let newNode = Node val nullN          -- Allocate a new node
     loop
     where
+      newNode = Node val nullN          -- Allocate a new node
+                -- FIXME See if this works
       loop :: IO()
       loop = do
           tTicket <- readForCAS tptr        -- Read tail

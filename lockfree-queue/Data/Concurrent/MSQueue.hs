@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, MagicHash #-}
+{-# LANGUAGE BangPatterns, MagicHash, CPP #-}
 
 module Data.Concurrent.MSQueue (
 newq, enq, deq, nullq, LinkedQueue()
@@ -8,11 +8,24 @@ import Data.IORef
 import Data.Atomics
 
 import System.IO
-import GHC.Base   -- for sameMutVar
-import GHC.Prim
 
 import GHC.IORef
 import GHC.STRef
+
+#if MIN_VERSION_base(4,7,0)
+import GHC.Base  hiding ((==#), sameMutVar#)
+import GHC.Prim hiding ((==#), sameMutVar#)
+import qualified GHC.PrimopWrappers as GPW
+(==#) :: Int# -> Int# -> Bool
+(==#) x y = case x GPW.==# y of { 0# -> False; _ -> True }
+
+sameMutVar# :: MutVar# s a -> MutVar# s a -> Bool
+sameMutVar# x y = case GPW.sameMutVar# x y of { 0# -> False; _ -> True }
+#else
+import GHC.Base
+import GHC.Prim
+#endif
+
 
 -- pointer_t is !IORef (Node a), these have been made mutable because head and tail would need to change values,
 -- Node has a data type and a pointer
@@ -60,10 +73,10 @@ enq queue@(LQ hptr tptr) val = do
           nTicket <- readForCAS nptr
           tail' <- readIORef tptr
           if tail == tail'                  -- are tail and next consistent?
-            then case peekTicket nTicket of 
+            then case peekTicket nTicket of
                       Null -> do (ret, newTicket) <- casIORef nptr nTicket newNode   -- try to link node at the end of the list
                                  if ret == True                                      -- enqueue done
-                                    then do 
+                                    then do
                                     _ <- casIORef tptr tTicket newNode             -- try to swing tail to inserted node
                                     return ()
                                     else loop
@@ -71,7 +84,7 @@ enq queue@(LQ hptr tptr) val = do
                         -- tail was not pointing to the last node, swing tptr
                         _ <- casIORef tptr tTicket nxtN
                         loop
-          else
+            else
             return ()
 
 
@@ -79,13 +92,13 @@ enq queue@(LQ hptr tptr) val = do
 --deq queue@(LQ hptr tptr) = do
 --  loop
 --  where
---    loop :: IO(Maybe a) 
+--    loop :: IO(Maybe a)
 --    loop = do
 --      hTicket <- readForCAS hptr
 --      tTicket <- readForCAS tptr
 --      let head = peekTicket hTicket
---          nptr = next head 
---      nTicket <- readForCAS nptr 
+--          nptr = next head
+--      nTicket <- readForCAS nptr
 --      head' <- readIORef hptr
 --      if head == head'            -- are head and next consistent?
 --         then if head == peekTicket tTicket     -- is Queue empty or tail falling behind
@@ -96,9 +109,9 @@ enq queue@(LQ hptr tptr) val = do
 --                      else do                 -- Tail falling behind, advance it
 --                       casIORef tptr tTicket nxtNode
 --                       loop
---                  else do                     -- No need to deal with tail 
---                    nxtNode <- peekTicket nTicket                    
+--                  else do                     -- No need to deal with tail
+--                    nxtNode <- peekTicket nTicket
 --                    let val = value nxtNode
-      
+
 
 --nullq :: LinkedQueue q -> IO Bool

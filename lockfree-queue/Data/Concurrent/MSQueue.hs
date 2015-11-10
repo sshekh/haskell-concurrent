@@ -1,8 +1,11 @@
 {-# LANGUAGE BangPatterns, MagicHash, CPP #-}
 
-module Data.Concurrent.MSQueue (
-newq, enq, deq, nullq, LinkedQueue()
-) where
+module Data.Concurrent.MSQueue ( newq
+                               , enq
+                               -- , deq
+                               -- , nullq
+                               , LinkedQueue()
+                               ) where
 
 import Data.IORef
 import Data.Atomics
@@ -26,18 +29,19 @@ import GHC.Base
 import GHC.Prim
 #endif
 
-
 -- pointer_t is !IORef (Node a), these have been made mutable because head and tail would need to change values,
 -- Node has a data type and a pointer
-data Node a = Null | Node a !(IORef (Node a))
+data Node a = Null
+            | Node { value :: a
+                   , next :: !(IORef (Node a))}
 
-next :: Node a -> !IORef( (Node a))
-next Null = Null
-next Node _ nptr = nptr
+-- next :: Node a -> Maybe (IORef (Node a))
+-- next Null = Nothing
+-- next (Node _ nptr) = Just nptr
 
-value :: Node a -> (Maybe a)
-value Null = Nothing
-value Node val _ = (Just val)
+-- value :: Node a -> Maybe a
+-- value Null = Nothing
+-- value (Node val _) = (Just val)
 
 -- FIXME
 instance Eq (Node a) where
@@ -46,12 +50,11 @@ instance Eq (Node a) where
   (==) _          _           = False
 
 
-data LinkedQueue a = LQ {
-  head :: !(IORef (Node a))
-  , tail :: !(IORef (Node a))
-  }
+data LinkedQueue a = LQ { head :: !(IORef (Node a))
+                        , tail :: !(IORef (Node a))
+                        }
 
-newq :: IO (LinkedQueue a)
+newq :: IO (LinkedQueue ())
 newq = do
   nullN <- newIORef Null
   let newNode = Node () nullN           -- Allocate a free node
@@ -62,32 +65,31 @@ newq = do
 enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do
     nullN <- newIORef Null
-    loop
-    where
-      newNode = Node val nullN          -- Allocate a new node
-                -- FIXME See if this works
+    let
+      newNode = Node val nullN     -- Allocate a new node
+                                   -- FIXME See if this works
       loop :: IO()
       loop = do
-          tTicket <- readForCAS tptr        -- Read tail
-          let tail = peekTicket tTicket
-              nptr = next tail              -- Read next
-          nTicket <- readForCAS nptr
-          tail' <- readIORef tptr
-          if tail == tail'                  -- are tail and next consistent?
-            then case peekTicket nTicket of
-                      Null -> do (ret, newTicket) <- casIORef nptr nTicket newNode   -- try to link node at the end of the list
-                                 if ret == True                                      -- enqueue done
-                                    then do
-                                    _ <- casIORef tptr tTicket newNode             -- try to swing tail to inserted node
-                                    return ()
-                                    else loop
-                      nxtN@(Node _ _) -> do
-                        -- tail was not pointing to the last node, swing tptr
-                        _ <- casIORef tptr tTicket nxtN
-                        loop
-            else
-            return ()
-
+        tTicket <- readForCAS tptr        -- Read tail
+        let tail = peekTicket tTicket
+            nptr = next tail              -- Read next
+        nTicket <- readForCAS nptr
+        tail' <- readIORef tptr
+        if tail == tail'                  -- are tail and next consistent?
+          then case peekTicket nTicket of
+                 Null -> do (ret, newTicket) <- casIORef nptr nTicket newNode   -- try to link node at the end of the list
+                            if ret == True                                      -- enqueue done
+                              then do
+                                _ <- casIORef tptr tTicket newNode             -- try to swing tail to inserted node
+                                return ()
+                              else loop
+                 nxtN@(Node _ _) -> do
+                                   -- tail was not pointing to the last node, swing tptr
+                                   _ <- casIORef tptr tTicket nxtN
+                                   loop
+          else
+              return ()
+    loop
 
 --deq :: LinkedQueue a -> IO(Maybe a)
 --deq queue@(LQ hptr tptr) = do

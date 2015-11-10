@@ -54,13 +54,13 @@ data LinkedQueue a = LQ { head :: !(IORef (Node a))
                         , tail :: !(IORef (Node a))
                         }
 
-newq :: IO (LinkedQueue ())
+newq :: IO (LinkedQueue a)
 newq = do
   nullN <- newIORef Null
-  let newNode = Node () nullN           -- Allocate a free node
-  head <- newIORef newNode              -- Both head and tail point to it
-  tail <- newIORef newNode
-  return (LQ head tail)
+  let newNode = Node (error "Invalid node") nullN   -- Allocate a free node
+  hd <- newIORef newNode              -- Both head and tail point to it
+  tl <- newIORef newNode
+  return (LQ hd tl)
 
 enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do

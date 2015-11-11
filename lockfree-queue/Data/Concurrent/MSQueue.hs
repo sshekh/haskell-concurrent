@@ -62,6 +62,14 @@ newq = do
   tl <- newIORef newNode
   return (LQ hd tl)
 
+nullq :: LinkedQueue q -> IO Bool
+nullq queue@(LQ hptr tptr) = do
+  head <- readIORef hptr
+  tail <- readIORed tptr
+  if head == tail
+     then True
+     else False
+
 enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do
     nullN <- newIORef Null
@@ -91,30 +99,34 @@ enq queue@(LQ hptr tptr) val = do
               return ()
     loop
 
---deq :: LinkedQueue a -> IO(Maybe a)
---deq queue@(LQ hptr tptr) = do
---  loop
---  where
---    loop :: IO(Maybe a)
---    loop = do
---      hTicket <- readForCAS hptr
---      tTicket <- readForCAS tptr
---      let head = peekTicket hTicket
---          nptr = next head
---      nTicket <- readForCAS nptr
---      head' <- readIORef hptr
---      if head == head'            -- are head and next consistent?
---         then if head == peekTicket tTicket     -- is Queue empty or tail falling behind
---                 then do
---                   nxtNode <- peekTicket nTicket
---                   if nxtNode == Null         -- Is Queue empty
---                      then return Nothing     -- Queue empty
---                      else do                 -- Tail falling behind, advance it
---                       casIORef tptr tTicket nxtNode
---                       loop
---                  else do                     -- No need to deal with tail
---                    nxtNode <- peekTicket nTicket
---                    let val = value nxtNode
-
-
---nullq :: LinkedQueue q -> IO Bool
+deq :: LinkedQueue a -> IO(Maybe a)
+deq queue@(LQ hptr tptr) = do
+  loop
+  where
+    loop :: IO(Maybe a)
+    loop = do
+      hTicket <- readForCAS hptr
+      tTicket <- readForCAS tptr
+      let head = peekTicket hTicket
+          nptr = next head
+      nTicket <- readForCAS nptr
+      head' <- readIORef hptr
+      if head == head'            -- are head and next consistent?
+         then if head == peekTicket tTicket     -- is Queue empty or tail falling behind
+                 then do
+                   nxtNode <- peekTicket nTicket
+                   if nxtNode == Null         -- Is Queue empty
+                      then return Nothing     -- Queue empty
+                      else do                 -- Tail falling behind, advance it
+                       casIORef tptr tTicket nxtNode
+                       loop
+                  else do                     -- No need to deal with tail
+                    nxtNode <- peekTicket nTicket
+                    let val = value nxtNode
+                    (ret, _) <- casIORef hptr hTicket nxtNode
+                    if ret == True
+                       then return (Just value)
+                       else
+                         loop
+         else
+          loop

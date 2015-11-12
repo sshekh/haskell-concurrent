@@ -61,3 +61,25 @@ main = do
   putStrLn v2
   x <- queueList a
   print x
+
+runThreadOps :: Int -> Int -> IO()
+runThreadOps m n = do
+  a <- newq
+  let runOps a n = do
+        if n == 0 then return ()
+          else do mm <- newEmptyMVar
+                  forkIO $ do enqNTimes a m
+                              runOps a (n-1)
+                              putMVar mm ("Done" ++ show n)
+                  x <- takeMVar mm
+                  print x
+                  return ()
+      enqNTimes a n = do
+        if n == 0 then return ()
+          else do enq a (1+n)
+                  enqNTimes a (n-1)
+  runOps a n
+  x <- queueList a
+  print x
+  print (length x)
+

@@ -2,8 +2,8 @@
 
 module Data.Concurrent.MSQueue ( newq
                                , enq
-                               -- , deq
-                               -- , nullq
+                               , deq
+                               , nullq
                                , LinkedQueue()
                                ) where
 
@@ -65,10 +65,10 @@ newq = do
 nullq :: LinkedQueue q -> IO Bool
 nullq queue@(LQ hptr tptr) = do
   head <- readIORef hptr
-  tail <- readIORed tptr
+  tail <- readIORef tptr
   if head == tail
-     then True
-     else False
+     then return True
+     else return False
 
 enq :: LinkedQueue a -> a -> IO()
 enq queue@(LQ hptr tptr) val = do
@@ -102,9 +102,8 @@ enq queue@(LQ hptr tptr) val = do
 deq :: LinkedQueue a -> IO(Maybe a)
 deq queue@(LQ hptr tptr) = do
   loop
-  where
-    loop :: IO(Maybe a)
-    loop = do
+    where
+      loop = do
       hTicket <- readForCAS hptr
       tTicket <- readForCAS tptr
       let head = peekTicket hTicket
@@ -112,21 +111,19 @@ deq queue@(LQ hptr tptr) = do
       nTicket <- readForCAS nptr
       head' <- readIORef hptr
       if head == head'            -- are head and next consistent?
-         then if head == peekTicket tTicket     -- is Queue empty or tail falling behind
+        then if head == peekTicket tTicket     -- is Queue empty or tail falling behind
                  then do
-                   nxtNode <- peekTicket nTicket
+                   let nxtNode = peekTicket nTicket
                    if nxtNode == Null         -- Is Queue empty
-                      then return Nothing     -- Queue empty
-                      else do                 -- Tail falling behind, advance it
+                     then return Nothing     -- Queue empty
+                     else do                 -- Tail falling behind, advance it
                        casIORef tptr tTicket nxtNode
                        loop
-                  else do                     -- No need to deal with tail
-                    nxtNode <- peekTicket nTicket
-                    let val = value nxtNode
-                    (ret, _) <- casIORef hptr hTicket nxtNode
-                    if ret == True
-                       then return (Just value)
-                       else
-                         loop
-         else
-          loop
+             else do                     -- No need to deal with tail
+               let val = value nxtNode
+                   nxtNode = peekTicket nTicket
+               (ret, _) <- casIORef hptr hTicket nxtNode
+               if ret == True
+                 then return (Just val)
+                 else loop
+        else loop

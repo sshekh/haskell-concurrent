@@ -44,6 +44,16 @@ build-type:          Simple
 -- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.8
 
+test-suite lockfree-queue-testsuite
+  -- type:          detailed-0.9
+  type:          exitcode-stdio-1.0
+  main-is:       Test/Main.hs
+  -- test-module:   Test.Main
+  build-depends: base >= 4.6.0.0,
+                 atomic-primops >=0.6,
+                 ghc-prim,
+                 QuickCheck,
+                 Cabal
 
 library
   -- Modules exported by the library.
@@ -55,4 +65,5 @@ library
   -- Other library packages from which modules are imported.
   build-depends:       base >= 4.6.0.0,
                        atomic-primops >=0.6,
-                       ghc-prim
+                       ghc-prim,
+                       QuickCheck

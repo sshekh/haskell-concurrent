@@ -4,7 +4,8 @@ module Data.Concurrent.MSQueue ( newq
                                , enq
                                , deq
                                , nullq
-                               , LinkedQueue()
+                               , LinkedQueue(..)
+                               , Node(..)
                                ) where
 
 import Data.IORef

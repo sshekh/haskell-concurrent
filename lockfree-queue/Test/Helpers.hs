@@ -15,6 +15,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic(assert, monadicIO, run)
 
 import Control.Concurrent
+import Control.Monad
 
 queueList :: LinkedQueue a -> IO [a]
 queueList (LQ hd tl) = do
@@ -68,9 +69,9 @@ runThreadOps m n = do
   let runOps a n = do
         if n == 0 then return ()
           else do mm <- newEmptyMVar
-                  forkIO $ do enqNTimes a m
-                              runOps a (n-1)
+                  forkIO $ do runOps a (n-1)
                               putMVar mm ("Done" ++ show n)
+                  enqNTimes a m
                   x <- takeMVar mm
                   print x
                   return ()
@@ -78,8 +79,7 @@ runThreadOps m n = do
         if n == 0 then return ()
           else do enq a (1+n)
                   enqNTimes a (n-1)
-  runOps a n
+  forkIO $ runOps a n
   x <- queueList a
   print x
   print (length x)
-

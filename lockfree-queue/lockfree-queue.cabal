@@ -67,3 +67,12 @@ library
                        atomic-primops >=0.6,
                        ghc-prim,
                        QuickCheck
+
+executable testprog1
+  main-is:       Test/ConcurrentTest.hs
+  -- test-module:   Test.Main
+  build-depends: base >= 4.6.0.0,
+                 atomic-primops >=0.6,
+                 ghc-prim,
+                 QuickCheck,
+                 Cabal
